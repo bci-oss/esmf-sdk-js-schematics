@@ -26,6 +26,7 @@ import {
 } from '@esmf/aspect-model-loader';
 import {classify, dasherize} from '@angular-devkit/core/src/utils/strings';
 import {Schema} from './schema';
+import {DataType} from '../form/generators/components/validators/validatorsTypes';
 
 /**
  * Gets enum properties from provided options and converts them into a string.
@@ -334,4 +335,12 @@ export function processType(shortUrn: string): string {
 
 export function isLangString(urn: string | undefined): boolean {
     return urn === Samm.RDF_LANG_STRING || urn === Samm.XML_LANG_STRING;
+}
+
+/**
+ * Pass property.characteristic.dataType?.urn values to the utility function to identify is the property is a link.
+ * @param urn - The dataType urn value of the property.
+ */
+export function isLinkString(urn: string | undefined): boolean {
+    return !!urn && urn.endsWith(DataType.AnyURI);
 }
