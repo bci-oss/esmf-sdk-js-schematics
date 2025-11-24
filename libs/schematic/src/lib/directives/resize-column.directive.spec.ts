@@ -1,5 +1,5 @@
 import {Component, DebugElement} from '@angular/core';
-import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {ResizeColumnDirective} from './resize-column.directive';
 
@@ -8,13 +8,7 @@ import {ResizeColumnDirective} from './resize-column.directive';
     <table>
       <thead>
         <tr>
-          <th
-            [esmfResizeColumn]="resizable"
-            [index]="0"
-            [minWidth]="minWidth"
-            [initialWidth]="initialWidth"
-            (dragging)="onDragging($event)"
-          >
+          <th [esmfResizeColumn]="resizable" [minWidth]="minWidth" [initialWidth]="initialWidth" (dragging)="onDragging($event)">
             Column 1
           </th>
           <th>Column 2</th>
@@ -39,7 +33,6 @@ describe('ResizeColumnDirective', () => {
   let component: TestComponent;
   let fixture: ComponentFixture<TestComponent>;
   let directiveElement: DebugElement;
-  let directive: ResizeColumnDirective;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -51,8 +44,15 @@ describe('ResizeColumnDirective', () => {
     fixture.detectChanges();
 
     directiveElement = fixture.debugElement.query(By.directive(ResizeColumnDirective));
-    directive = directiveElement.injector.get(ResizeColumnDirective);
   });
+
+  afterEach(fakeAsync(() => {
+    // Clean up any pending drag operations to prevent warnings
+    document.dispatchEvent(new MouseEvent('mouseup'));
+    fixture.detectChanges();
+    tick();
+    fixture.destroy();
+  }));
 
   describe('when resizable is true', () => {
     beforeEach(() => {
@@ -114,7 +114,7 @@ describe('ResizeColumnDirective', () => {
       expect(document.body.classList.contains('resizing')).toBe(true);
     });
 
-    it('should resize column on mousemove', () => {
+    it('should resize column on mousemove', fakeAsync(() => {
       const column = directiveElement.nativeElement;
       const handle = column.querySelector('.handle') as HTMLElement;
       const table = column.closest('table') as HTMLElement;
@@ -148,9 +148,9 @@ describe('ResizeColumnDirective', () => {
       // Column width should change
       const newWidth = parseInt(column.style.width, 10);
       expect(newWidth).toBeGreaterThan(initialWidth);
-    });
+    }));
 
-    it('should not resize below minimum width', () => {
+    it('should not resize below minimum width', fakeAsync(() => {
       component.minWidth = 100;
       fixture.detectChanges();
 
@@ -185,9 +185,9 @@ describe('ResizeColumnDirective', () => {
       // Width should be at minimum
       const width = parseInt(column.style.width, 10);
       expect(width).toBe(100);
-    });
+    }));
 
-    it('should end resize on mouseup', done => {
+    it('should end resize on mouseup', fakeAsync(() => {
       const column = directiveElement.nativeElement;
       const handle = column.querySelector('.handle') as HTMLElement;
 
@@ -209,17 +209,14 @@ describe('ResizeColumnDirective', () => {
       // End resize
       document.dispatchEvent(new MouseEvent('mouseup'));
       fixture.detectChanges();
+      tick();
 
-      // Use setTimeout to account for the async setTimeout in the directive
-      setTimeout(() => {
-        expect(component.isDragging).toBe(false);
-        expect(document.body.classList.contains('resizing')).toBe(false);
-        expect(handle.style.opacity).toBe('0');
-        done();
-      }, 10);
-    });
+      expect(component.isDragging).toBe(false);
+      expect(document.body.classList.contains('resizing')).toBe(false);
+      expect(handle.style.opacity).toBe('0');
+    }));
 
-    it('should not resize if mousemove without buttons pressed', () => {
+    it('should not resize if mousemove without buttons pressed', fakeAsync(() => {
       const column = directiveElement.nativeElement;
       const handle = column.querySelector('.handle') as HTMLElement;
       const table = column.closest('table') as HTMLElement;
@@ -253,7 +250,7 @@ describe('ResizeColumnDirective', () => {
       // Width should not change significantly (might have some browser default)
       const currentStyleWidth = column.style.width;
       expect(currentStyleWidth === '' || parseInt(currentStyleWidth, 10) <= initialWidth + 1).toBe(true);
-    });
+    }));
 
     it('should not do anything on mouseup if not pressed', () => {
       const handle = directiveElement.nativeElement.querySelector('.handle') as HTMLElement;
@@ -270,7 +267,7 @@ describe('ResizeColumnDirective', () => {
   });
 
   describe('when resizable is false', () => {
-    it('should not create handle element', async () => {
+    it('should not create handle element', fakeAsync(() => {
       // Create a new fixture with resizable set to false from the start
       const testFixture = TestBed.createComponent(TestComponent);
       const testComponent = testFixture.componentInstance;
@@ -280,9 +277,12 @@ describe('ResizeColumnDirective', () => {
       const testDirectiveElement = testFixture.debugElement.query(By.directive(ResizeColumnDirective));
       const handle = testDirectiveElement.nativeElement.querySelector('.handle');
       expect(handle).toBeFalsy();
-    });
 
-    it('should not set up event listeners', async () => {
+      tick();
+      testFixture.destroy();
+    }));
+
+    it('should not set up event listeners', fakeAsync(() => {
       // Create a new fixture with resizable set to false from the start
       const testFixture = TestBed.createComponent(TestComponent);
       const testComponent = testFixture.componentInstance;
@@ -298,11 +298,14 @@ describe('ResizeColumnDirective', () => {
 
       const handle = column.querySelector('.handle');
       expect(handle).toBeFalsy();
-    });
+
+      tick();
+      testFixture.destroy();
+    }));
   });
 
   describe('custom configuration', () => {
-    it('should use custom minWidth', () => {
+    it('should use custom minWidth', fakeAsync(() => {
       component.minWidth = 150;
       component.resizable = true;
       fixture.detectChanges();
@@ -337,9 +340,9 @@ describe('ResizeColumnDirective', () => {
 
       const width = parseInt(column.style.width, 10);
       expect(width).toBe(150);
-    });
+    }));
 
-    it('should use custom initialWidth', () => {
+    it('should use custom initialWidth', fakeAsync(() => {
       // Create a new fixture with custom initialWidth from the start
       const testFixture = TestBed.createComponent(TestComponent);
       const testComponent = testFixture.componentInstance;
@@ -350,6 +353,9 @@ describe('ResizeColumnDirective', () => {
       const testDirectiveElement = testFixture.debugElement.query(By.directive(ResizeColumnDirective));
       const column = testDirectiveElement.nativeElement;
       expect(column.style.minWidth).toBe('300px');
-    });
+
+      tick();
+      testFixture.destroy();
+    }));
   });
 });

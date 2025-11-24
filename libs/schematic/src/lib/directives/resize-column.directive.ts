@@ -1,26 +1,25 @@
-import {Directive, ElementRef, EventEmitter, inject, Input, OnInit, Output, Renderer2} from '@angular/core';
+import {Directive, effect, ElementRef, inject, input, output, Renderer2, signal} from '@angular/core';
 import {DOCUMENT} from '@angular/common';
 
 @Directive({
   selector: '[esmfResizeColumn]',
 })
-export class ResizeColumnDirective implements OnInit {
-  @Input('esmfResizeColumn') resizable = false;
-  @Input() index = 0;
-  @Input() minWidth = 50;
-  @Input() initialWidth = 200;
+export class ResizeColumnDirective {
+  resizable = input(false, {alias: 'esmfResizeColumn'});
+  minWidth = input(50);
+  initialWidth = input(200);
 
-  @Output() dragging = new EventEmitter<any>();
+  dragging = output<boolean>();
 
   private readonly renderer = inject(Renderer2);
   private readonly el = inject(ElementRef);
   private readonly document = inject(DOCUMENT);
 
-  private startX!: number;
-  private startWidth!: number;
-  private readonly column!: HTMLElement;
+  private readonly startX = signal(0);
+  private readonly startWidth = signal(0);
+  private readonly pressed = signal(false);
+  private readonly column: HTMLElement;
   private table!: HTMLElement;
-  private pressed!: boolean;
   private handle!: HTMLElement;
 
   private mouseMoveListener!: () => void;
@@ -30,14 +29,14 @@ export class ResizeColumnDirective implements OnInit {
 
   constructor() {
     this.column = this.el.nativeElement;
-  }
 
-  ngOnInit() {
-    if (this.resizable) {
-      this.setTable();
-      this.setListeners();
-      this.createHandle();
-    }
+    effect(() => {
+      if (this.resizable()) {
+        this.setTable();
+        this.setListeners();
+        this.createHandle();
+      }
+    });
   }
 
   createHandle(): void {
@@ -50,7 +49,7 @@ export class ResizeColumnDirective implements OnInit {
     const row = this.renderer.parentNode(this.column);
     const thead = this.renderer.parentNode(row);
     this.table = this.renderer.parentNode(thead);
-    this.renderer.setStyle(this.column, 'min-width', `${this.initialWidth}px`);
+    this.renderer.setStyle(this.column, 'min-width', `${this.initialWidth()}px`);
   }
 
   setListeners(): void {
@@ -68,23 +67,23 @@ export class ResizeColumnDirective implements OnInit {
   };
 
   onMouseDown = (event: MouseEvent) => {
-    this.pressed = true;
+    this.pressed.set(true);
     this.mouseEnterListener();
     this.mouseLeaveListener();
     this.dragging.emit(true);
-    this.startX = event.pageX;
-    this.startWidth = this.column.offsetWidth;
+    this.startX.set(event.pageX);
+    this.startWidth.set(this.column.offsetWidth);
     this.renderer.addClass(this.document.body, 'resizing');
     this.mouseMoveListener = this.renderer.listen(this.table, 'mousemove', this.onMouseMove);
     this.mouseUpListener = this.renderer.listen('document', 'mouseup', this.onMouseUp);
   };
 
   onMouseMove = (event: MouseEvent): void => {
-    if (this.pressed && event.buttons) {
+    if (this.pressed() && event.buttons) {
       // Calculate width of column
-      const distance = event.pageX - this.startX;
-      const targetWidth = this.startWidth + distance;
-      const width = targetWidth >= this.minWidth ? targetWidth : this.minWidth;
+      const distance = event.pageX - this.startX();
+      const targetWidth = this.startWidth() + distance;
+      const width = targetWidth >= this.minWidth() ? targetWidth : this.minWidth();
 
       // Set column width explicitly (cells are getting resized automatically)
       this.renderer.setStyle(this.column, 'min-width', `${width}px`);
@@ -93,11 +92,11 @@ export class ResizeColumnDirective implements OnInit {
   };
 
   onMouseUp = (): void => {
-    if (this.pressed) {
+    if (this.pressed()) {
       this.mouseMoveListener();
       this.mouseUpListener();
       this.setListeners();
-      this.pressed = false;
+      this.pressed.set(false);
 
       // setTimeout is used in order to ensure that the click will only trigger the resize event and not the
       // sorting one as well, since both of the events are triggered on the same cell. This is the only way it
