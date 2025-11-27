@@ -34,7 +34,6 @@ import {generateConfigMenu} from './generators/components/config-menu/index';
 import {generateTableComponent} from './generators/components/table/index';
 import {generateDataSource} from './generators/data-source/index';
 import {TableSchema} from './schema';
-import {generateExportTableDialog} from './generators/components/export-dialog/index';
 import {generateTableCellLinkComponent} from './generators/components/table-cell-link/index';
 
 export default function (tableSchema: TableSchema): Rule {
@@ -69,6 +68,5 @@ function tableSpecificGeneration(): Array<Rule> {
     generateStorageService(options), // General
     generateColumnMenu(options), // General
     generateConfigMenu(options), // General
-    generateExportTableDialog(options), // General
   ];
 }
