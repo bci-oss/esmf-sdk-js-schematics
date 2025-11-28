@@ -11,11 +11,6 @@ export const baseUrl = (environment as any).baseUrl || '';
 @NgModule({
     imports: [TranslocoModule],
     exports: [TranslocoModule],
-    providers: [
-        <%= providerInfo %>
-        <% if (options.componentType !== 'form') { %>
-            , EsmfPaginatorSelectConfigProvider
-        <% } %>
-    ],
-    })
+    providers: [<%= providerInfo %>],
+})
 export class <%= classify(name) %>Module {}
