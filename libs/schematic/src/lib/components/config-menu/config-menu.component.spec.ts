@@ -16,14 +16,14 @@ import {ComponentRef} from '@angular/core';
 import {MatDialogRef, MAT_DIALOG_DATA} from '@angular/material/dialog';
 import {By} from '@angular/platform-browser';
 import {EsmfConfigMenuComponent, ConfigMenuBase} from './config-menu.component';
-import {JSSdkLocalStorageService} from '../../services/storage.service';
+import {EsmfLocalStorageService} from '../../services/storage.service';
 import {getTranslocoTestingModule} from '../../test-utils';
 
 describe('EsmfConfigMenuComponent', () => {
   let component: EsmfConfigMenuComponent<ConfigMenuBase>;
   let fixture: ComponentFixture<EsmfConfigMenuComponent<ConfigMenuBase>>;
   let componentRef: ComponentRef<EsmfConfigMenuComponent<ConfigMenuBase>>;
-  let storageService: jest.Mocked<JSSdkLocalStorageService>;
+  let storageService: jest.Mocked<EsmfLocalStorageService>;
 
   const createMockConfigs = (): ConfigMenuBase[] => [
     {name: 'config.name1', desc: 'config.desc1', selected: true, color: '#ff0000'},
@@ -43,11 +43,11 @@ describe('EsmfConfigMenuComponent', () => {
       providers: [
         {provide: MAT_DIALOG_DATA, useValue: dialogData},
         {provide: MatDialogRef, useValue: {close: jest.fn()}},
-        {provide: JSSdkLocalStorageService, useValue: {setItem: jest.fn()}},
+        {provide: EsmfLocalStorageService, useValue: {setItem: jest.fn()}},
       ],
     }).compileComponents();
 
-    storageService = TestBed.inject(JSSdkLocalStorageService) as jest.Mocked<JSSdkLocalStorageService>;
+    storageService = TestBed.inject(EsmfLocalStorageService) as jest.Mocked<EsmfLocalStorageService>;
     fixture = TestBed.createComponent(EsmfConfigMenuComponent<ConfigMenuBase>);
     component = fixture.componentInstance;
     componentRef = fixture.componentRef;
@@ -58,9 +58,7 @@ describe('EsmfConfigMenuComponent', () => {
       const mockConfigs = createMockConfigs();
       const mockData = {configs: mockConfigs, keyLocalStorage: 'test-key'};
 
-      beforeEach(async () => {
-        await setupComponent(mockData);
-      });
+      beforeEach(async () => await setupComponent(mockData));
 
       it('should initialize with provided configs from dialog data', () => {
         expect(component.configs()).toEqual(mockConfigs);

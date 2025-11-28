@@ -1,5 +1,5 @@
 import {ChangeDetectionStrategy, Component, inject, input, output, signal} from '@angular/core';
-import {JSSdkLocalStorageService} from '../../services/storage.service';
+import {EsmfLocalStorageService} from '../../services/storage.service';
 import {MAT_DIALOG_DATA, MatDialogClose} from '@angular/material/dialog';
 import {MatDivider} from '@angular/material/divider';
 import {MatListOption, MatSelectionList} from '@angular/material/list';
@@ -44,7 +44,7 @@ export class EsmfConfigMenuComponent<Config extends ConfigMenuBase> {
   isOpenedFromMatMenu = input(false);
   configChangedEvent = output<Config[]>();
 
-  private readonly storageService: JSSdkLocalStorageService = inject(JSSdkLocalStorageService);
+  private readonly storageService: EsmfLocalStorageService = inject(EsmfLocalStorageService);
   private readonly data = inject<{configs: Config[]; keyLocalStorage: string} | null>(MAT_DIALOG_DATA, {optional: true});
 
   keyLocalStorage = signal(this.data?.keyLocalStorage ?? '');
